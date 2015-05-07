@@ -10,3 +10,17 @@ How to build:
 	$./script/gen.sh
 
 	$make
+
+Run a test:
+    
+  - Run server wihout finishing step:
+
+	$./Server -o 0
+
+  - Online training:
+
+    $./script/online.sh
+
+  - Test classification
+
+    $./script/test.sh

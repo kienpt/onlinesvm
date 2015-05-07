@@ -7,6 +7,6 @@ There are couple of modifications:
 How to build:
  - First you need to install Thrift: https://thrift.apache.org/
 
-	$./gen.sh
+	$./script/gen.sh
 
 	$make

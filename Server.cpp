@@ -25,7 +25,7 @@ using namespace apache::thrift::server;
 
 /*
 * A thrift server that wraps up LASVM
-* @author: Kien Pham (kien.pham@nyu.edu)
+* @author: Kien Pham (kien.pham@nyu.edu or kienpt.vie@gmail.com)
 */
 
 class ClassifierHandler : virtual public ClassifierIf {
@@ -86,18 +86,11 @@ class ClassifierHandler : virtual public ClassifierIf {
 
     double x_sq = lasvm_sparsevector_dot_product(sv, sv);//only RBF kernel requires this
     
-    //cout<<"x_sq of test vector: "<<x_sq<<endl;
 	//Classify
 	double y=-online::b0;//result
-	//cout<<"size of alpha_sv.size(): "<<online::alpha_sv.size()<<endl;
-    //for (int k=0;k<online::alpha_sv.size();k++)
-	//cout<<online::alpha_sv[k]<<", ";
     for(int i=0;i<online::msv;i++)//msv is number of support vectors
     {
-//      if (online::alpha_sv[i] != 0)
-  //      cout<<"alpha_sv["<<i<<"]: "<<online::alpha_sv[i]<<",";
       y+=online::alpha_sv[i]*online::kernel(i,x_sq,sv,NULL);
-      //break;//debug
     }
     cout<<"Result: "<<y<<endl;
     return y;

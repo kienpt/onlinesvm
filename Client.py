@@ -1,4 +1,3 @@
-#@author: Kien Pham (kien.pham@nyu.edu)
 import sys
 sys.path.append('./gen-py')
 
@@ -12,8 +11,9 @@ from thrift.transport import TTransport
 from thrift.protocol import TBinaryProtocol
 
 
+#@author: Kien Pham (kien.pham@nyu.edu or kienpt.vie@gmail.com)
 
-def load_training_data(training_file):
+def load_data(training_file):
     trndata = []
     with open(training_file) as lines:
         for line in lines:
@@ -33,6 +33,10 @@ def load_training_data(training_file):
     return trndata
 
 def train(training_file):
+    '''
+    Train all data at once
+    '''
+
     port = 9092
     # Make socket
     transport = TSocket.TSocket('localhost', port)
@@ -45,12 +49,16 @@ def train(training_file):
     # Connect!
     transport.open()
    
-    trndata = load_training_data(training_file)
+    trndata = load_data(training_file)
     client.train(trndata)
    
     transport.close()
 
 def train_online(training_file):
+    '''
+    Test online training: split data into two parts, then train one by one
+    '''
+
     port = 9092
     # Make socket
     transport = TSocket.TSocket('localhost', port)
@@ -63,7 +71,7 @@ def train_online(training_file):
     # Connect!
     transport.open()
    
-    trndata = load_training_data(training_file)
+    trndata = load_data(training_file)
     middle = len(trndata)/2
     
     trndata1 = trndata[:middle]
@@ -77,6 +85,7 @@ def train_online(training_file):
 
 
 def test(test_file):
+    #Run a test on the trained model
     port = 9092
     transport = TSocket.TSocket('localhost', port)
     transport = TTransport.TBufferedTransport(transport)
@@ -84,7 +93,7 @@ def test(test_file):
     client = Classifier.Client(protocol)
     transport.open()
    
-    trndata = load_training_data(test_file) #training and test data have the same format
+    trndata = load_data(test_file) #training and test data have the same format
     a = 0
     c = 0
     for data in trndata:
@@ -104,6 +113,10 @@ def test(test_file):
 
 
 def main(argv):
+    if len(argv) != 2:
+        print "Wrong arguments"
+        print "arguments: [option(-t, -c, -o)] [training_file]"
+        return
     option = argv[0]
     input_file = argv[1]
     if option == "-t":#train

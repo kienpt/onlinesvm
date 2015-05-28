@@ -31,13 +31,17 @@ GEN_INC    = -Igen-cpp
 
 
 
-default: server client
+default: server cpp java
 
 server: Server.cpp  $(LASVMSRC) $(TOOLS) $(TOOLSINCL)
 	$(CXX) ${CPP_OPTS} ${CPP_DEFS} -o Server ${GEN_INC} ${INCS_DIRS} Server.cpp ${GEN_SRC} ${LIBS_DIRS} ${LASVM_INC} $(LASVMSRC) $(TOOLS) ${LIBS}
 
-client: Client.cpp
+cpp: Client.cpp
 	$(CXX) ${CPP_OPTS} ${CPP_DEFS} -o Client ${GEN_INC} ${INCS_DIRS} Client.cpp ${GEN_SRC} ${LIBS_DIRS} ${LIBS}
+
+JAVA_LIBS=-cp .:gen-java/:java-libs/libthrift-0.9.2.jar:java-libs/slf4j-api-1.5.8.jar
+java: 
+	javac ${JAVA_LIBS} Client.java
 
 clean:
 	$(RM) -r Client Server

@@ -80,7 +80,7 @@ int kernel_type=RBF;              // LINEAR, POLY, RBF or SIGMOID kernels
 double degree=3,kgamma=-1,coef0=0;// kernel params
 int use_b0=1;                     // use threshold via constraint \sum a_i y_i =0
 int selection_type=RANDOM;        // RANDOM, GRADIENT or MARGIN selection strategies
-int optimizer=ONLINE_WITH_FINISHING; // strategy of optimization
+int optimizer=ONLINE; // strategy of optimization. Default is ONLINE because online learning mode does not use finishing steps
 double C=1;                       // C, penalty on errors
 double C_neg=1;                   // C-Weighting for negative examples
 double C_pos=1;                   // C-Weighting for positive examples
@@ -120,7 +120,7 @@ void exit_with_help()
             "    0 -- libsvm ascii format (default)\n"
             "    1 -- binary format\n"
             "    2 -- split file format\n"
-            "-o optimizer: set the type of optimization (default 1)\n"
+            "-o optimizer: set the type of optimization (default 0 because online learning)\n"
             "    0 -- online \n"
             "    1 -- online with finishing step \n"
             "-t kernel_type : set type of kernel function (default 2)\n"
@@ -289,7 +289,7 @@ void parse_command_line(int argc, char **argv)
     }
     saves=select_size.size(); 
     if(saves==0) select_size.push_back(100000000);
-    cout<<"[parse_command_line] select size: "<<select_size.size()<<endl;
+    //cout<<"[parse_command_line] select size: "<<select_size.size()<<endl;
     // determine filenames
 
     
@@ -480,7 +480,7 @@ void libsvm_load_data(const std::vector<LabelData> &trainingdata)
     msz = trainingdata.size(); 
 
 
-    //max_index = 0;
+    int temp_max_index = 0;
     for (std::vector<LabelData>::const_iterator it = trainingdata.begin(); it != trainingdata.end(); ++it)
     {
         Y.push_back(it->label);        
@@ -490,12 +490,13 @@ void libsvm_load_data(const std::vector<LabelData> &trainingdata)
             index = vsmit->feature;
             value = vsmit->value;
             lasvm_sparsevector_set(v, index, value);
-            if (index>max_index) max_index=index;
+            if (index>temp_max_index) temp_max_index=index;
         }
         X.push_back(v);
     }
-    max_index = 200;//@K hardcode
-    printf("examples: %d   features: %d\n",msz,max_index);
+    if (max_index == 0)
+        max_index = 2*temp_max_index;
+    printf("examples: %d   features: %d\n",msz,temp_max_index);
     printf("Total examples: %d\n",X.size());
 
     //This following code is from load_data_file()    
@@ -1071,7 +1072,7 @@ void train_online()
     cout<<"\nDone training"<<endl;
     if(saves<2) 
     {
-       cout<<"Start saving..."<<endl;
+       cout<<"Start saving variables..."<<endl;
         finish(sv); // if haven't done any intermediate saves, do final save
         timer+=sw->get_time();
         //f << m << " " << count_svs() << " " << kcalcs << " " << timer << endl;
@@ -1080,7 +1081,7 @@ void train_online()
     if(verbosity>0) printf("\n");
     msv=count_svs(); 
     printf("nSVs=%d\n",msv);
-    printf("||w||^2=%g\n",lasvm_get_w2(sv));
+    printf("(Value of dual objective function)||w||^2=%g\n",lasvm_get_w2(sv));
     printf("kcalcs="); cout << kcalcs << endl;
     //@K fill up alpha_sv and x_sv_square. This code is from libsvm_save_model in train
 	//@K reset alpha

@@ -40,42 +40,23 @@ class ClassifierHandler : virtual public ClassifierIf {
   }
 
   void parse_and_initialize(int argc, char **argv) {
-     this->initialize_online_model(argc, argv);
-     /*
+     online::parse_command_line(argc, argv);
      for(int i=1; i<argc; i++)
      {
        if(argv[i][0] != '-') break;
        ++i;
        switch(argv[i-1][1])
        {
-       case 'W':
-         this->initialize_without_model(argc, argv);
-	     break;
-       case 'M':
-         this->initialize_fixed_model(argc, argv);
-         break;
-       case 'O':
-         this->initialize_online_model(argc, argv);
-         break;
+         case 'M':
+           cout<<"Start server with model"<<endl;
+           load(string(argv[i]));
+           break;
+         default:
+           break;
        }
      }
-     */
   }
   
-
-  void initialize_without_model(int argc, char **argv) {
-	//Initialize without a model
-    cout<<"Start server without a model"<<endl;
-    online::parse_command_line(argc, argv);
-  }
-
-  void initialize_online_model(int argc, char **argv) {
-    //Initialize with a model and this model will be updated when `train` is called
-    ////Initialize with a fixed model
-    cout<<"Start server with online model"<<endl;
-    online::parse_command_line(argc, argv);
-  }
-
   Label classify(const VSMVector& data) {
     //Convert VSMVector to lasvm_sparsevector_t
     lasvm_sparsevector_t* sv = lasvm_sparsevector_create();

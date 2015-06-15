@@ -120,6 +120,26 @@ public class Client {
     }
   }
 
+  public void save_model(String model_file)
+  {
+    //save trained model to file
+    try {
+      client.save(model_file);
+    } catch (TException x) {
+      x.printStackTrace();
+    }
+  }
+
+  public void load_model(String model_file)
+  {
+    //load saved model from file
+    try {
+      client.load(model_file);
+    } catch (TException x) {
+      x.printStackTrace();
+    }
+  }
+
   public static void main(String [] args) {
     Client client = new Client("localhost", 9092);
     if (args.length != 2) {
@@ -139,7 +159,13 @@ public class Client {
         case "-o":
           client.train_online(inputfile);
           break;
-      }
+        case "-s":
+         client.save_model(inputfile);
+         break;
+        case "-l":
+         client.load_model(inputfile);
+         break;
+     }
     }
     catch (TException x) {
       x.printStackTrace();

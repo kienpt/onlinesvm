@@ -39,7 +39,7 @@ server: Server.cpp  $(LASVMSRC) $(TOOLS) $(TOOLSINCL)
 cpp: Client.cpp
 	$(CXX) ${CPP_OPTS} ${CPP_DEFS} -o Client ${GEN_INC} ${INCS_DIRS} Client.cpp ${GEN_SRC} ${LIBS_DIRS} ${LIBS}
 
-JAVA_LIBS=-cp .:gen-java/:java-libs/libthrift-0.9.2.jar:java-libs/slf4j-api-1.5.8.jar
+JAVA_LIBS=-cp .:java-libs/libthrift-0.9.2.jar:java-libs/slf4j-api-1.7.12.jar:gen-java
 java: 
 	javac ${JAVA_LIBS} Client.java
 

@@ -60,7 +60,7 @@ bool operator<(const ID& x, const ID& y)
 
 
 char input_file_name[1024];
-char model_file_name[1024];
+//char model_file_name[1024];
 char output_file_name[1024]; //not used yet
 
 /* Data and model */
@@ -71,8 +71,8 @@ vector <lasvm_sparsevector_t*> X; // feature vectors of training data
 vector <lasvm_sparsevector_t*> X_sv; // feature vectors of support vectors
 vector <int> Y;                   // labels
 vector <double> kparam;           // kernel parameters
-vector <double> alpha;            // alpha_i, SV weights
-vector <double> alpha_sv;            // labels of support vectors
+vector <double> alpha;            // alpha_i, SV weights or labels of training data
+vector <double> alpha_sv;         // labels of support vectors
 double b0;                        // threshold
 
 /* Hyperparameters */
@@ -113,7 +113,8 @@ lasvm_t *sv=NULL;
 void exit_with_help()
 {
     fprintf(stdout,
-            "Usage: la_svm [options] training_set_file [model_file]\n"
+            //"Usage: la_svm [options] training_set_file [model_file]\n"
+            "Usage: la_svm [options]\n"
             "options:\n"
             "-B file format : files are stored in the following format:\n"
             "    0 -- libsvm ascii format (default)\n"
@@ -297,7 +298,7 @@ void parse_command_line(int argc, char **argv)
         exit_with_help();
         return;//@K
     }
-    strcpy(model_file_name,argv[i]);    
+    //strcpy(model_file_name,argv[i]);    //@K: model file will be sent via thrift function
 
     //strcpy(input_file_name, argv[i]); //@K: training data will be sent via thrift function
     /*
@@ -347,6 +348,126 @@ int split_file_load(char *f)
     
     return binary_file;
 }
+
+void libsvm_load_sv_data(FILE *fp)
+{
+    int max_index; int oldindex=0;
+    int index; double value; int i;
+    lasvm_sparsevector_t* v;
+
+    alpha_sv.resize(msv);
+    for(i=0;i<msv;i++)
+    {
+        v=lasvm_sparsevector_create();
+        X_sv.push_back(v);
+    }
+
+    max_index = 0;
+    for(i=0;i<msv;i++)
+    {
+        double label;
+        fscanf(fp,"%lf",&label);
+        //printf("%d:%g\n",i,label);
+        alpha_sv[i] = label;
+        while(1)
+        {
+            int c;
+            do {
+                c = getc(fp);
+                if(c=='\n') goto out2;
+            } while(isspace(c));
+            ungetc(c,fp);
+            fscanf(fp,"%d:%lf",&index,&value);
+            if(index!=oldindex)
+            {
+                lasvm_sparsevector_set(X_sv[i],index,value);
+            }
+            oldindex=index;
+            if (index>max_index) max_index=index;
+        }
+        out2:
+            label=1; // dummy
+    }
+
+    printf("loading model: %d svs\n",msv);
+
+    if(kernel_type==RBF)
+    {
+        x_sv_square.resize(msv);
+        for(i=0;i<msv;i++)
+            x_sv_square[i]=lasvm_sparsevector_dot_product(X_sv[i],X_sv[i]);
+    }
+
+}
+    
+int libsvm_load_model(std::string model_file_name)
+{
+    int i;
+
+    FILE *fp = fopen(model_file_name.c_str(),"r");
+
+
+    if(fp == NULL)
+    {
+        fprintf(stderr,"Can't open input file \"%s\"\n",model_file_name.c_str());
+        exit(1);
+    }
+
+    static char tmp[1001];
+
+    fscanf(fp,"%1000s",tmp); //svm_type
+    fscanf(fp,"%1000s",tmp); //c_svc
+    fscanf(fp,"%1000s",tmp); //kernel_type
+    fscanf(fp,"%1000s",tmp); //rbf,poly,..
+
+    kernel_type=LINEAR;
+    for(i=0;i<4;i++)
+        if (strcmp(tmp,kernel_type_table[i])==0) kernel_type=i;
+
+    if(kernel_type == POLY)
+    {
+        fscanf(fp,"%1000s",tmp);
+        fscanf(fp,"%lf", &degree);
+    }
+    if(kernel_type == POLY || kernel_type == RBF || kernel_type == SIGMOID)
+    {
+        fscanf(fp,"%1000s",tmp);
+        fscanf(fp,"%lf",&kgamma);
+    }
+    if(kernel_type == POLY || kernel_type == SIGMOID)
+    {
+        fscanf(fp,"%1000s",tmp);
+        fscanf(fp,"%lf", &coef0);
+    }
+
+    fscanf(fp,"%1000s",tmp); // nr_class
+    fscanf(fp,"%1000s",tmp); // 2
+    fscanf(fp,"%1000s",tmp); // total_sv
+    fscanf(fp,"%d",&msv);
+
+    fscanf(fp,"%1000s",tmp); //rho
+    fscanf(fp,"%lf\n",&b0);
+
+    fscanf(fp,"%1000s",tmp); // label
+    fscanf(fp,"%1000s",tmp); // 1
+    fscanf(fp,"%1000s",tmp); // -1
+    fscanf(fp,"%1000s",tmp); // nr_sv
+    fscanf(fp,"%1000s",tmp); // num
+    fscanf(fp,"%1000s",tmp); // num
+    fscanf(fp,"%1000s",tmp); // SV
+
+    // now load SV data...
+
+    libsvm_load_sv_data(fp);
+
+    // finished!
+
+    fclose(fp);
+    return 0;
+}
+
+
+
 
 void libsvm_load_data(const std::vector<LabelData> &trainingdata)
 //This is the modified version of libsvm_load_data(char *filename)
@@ -667,10 +788,10 @@ int count_svs()
 }
 
 
-int libsvm_save_model()
+int libsvm_save_model(std::string model_file_name)
     // saves the model in the same format as LIBSVM
 {
-    FILE *fp = fopen(model_file_name,"w");
+    FILE *fp = fopen(model_file_name.c_str(),"w");
     if(fp==NULL) return -1;
     
     count_svs();
@@ -838,9 +959,9 @@ void train_online()
     double timer=0;
     stopwatch *sw; // start measuring time after loading is finished
     sw=new stopwatch;    // save timing information
-    char t[1000];
-    strcpy(t,model_file_name);
-    strcat(t,".time");
+    //char t[1000];
+    //strcpy(t,model_file_name);
+    //strcat(t,".time");
     int base = m-msz;//@K base is number of trained examples
 
     printf("set cache size %d\n",cache_size);
@@ -921,13 +1042,13 @@ void train_online()
 
                         if(termination_type==TIME)  
                         {
-                            sprintf(tmp,"%s_%dsecs",model_file_name,i); 
+                            //sprintf(tmp,"%s_%dsecs",model_file_name,i); 
                             fprintf(stdout,"..[saving model_%d secs]..",i);
                         }
                         else
                         {    
                             fprintf(stdout,"..[saving model_%d pts]..",i);
-                            sprintf(tmp,"%s_%dpts",model_file_name,i);  
+                            //sprintf(tmp,"%s_%dpts",model_file_name,i);  
                         }
                         //libsvm_save_model(tmp);  //@K don't need to save the model without calling
                         
@@ -989,7 +1110,7 @@ void test()
 {
     cout <<"Hello from train test"<<endl;
 }
-
+/*
 
 int main(int argc, char **argv)  
 {
@@ -1003,7 +1124,8 @@ int main(int argc, char **argv)
 
     train_online();
     
-    libsvm_save_model();
+    //libsvm_save_model();
    
 }
+*/
 }

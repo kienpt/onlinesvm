@@ -111,20 +111,46 @@ def test(test_file):
     print "accuracy: "  + str(a/float(c))
     transport.close()
 
+def save_model(model_file):
+    #Saving the trained model to file.
+    #Must run after train()
+    port = 9092
+    transport = TSocket.TSocket('localhost', port)
+    transport = TTransport.TBufferedTransport(transport)
+    protocol = TBinaryProtocol.TBinaryProtocol(transport)
+    client = Classifier.Client(protocol)
+    transport.open()   
+    client.save(model_file)
+    transport.close()
+
+def load_model(model_file):
+    #Load the saved model from file.
+    port = 9092
+    transport = TSocket.TSocket('localhost', port)
+    transport = TTransport.TBufferedTransport(transport)
+    protocol = TBinaryProtocol.TBinaryProtocol(transport)
+    client = Classifier.Client(protocol)
+    transport.open()   
+    client.load(model_file)
+    transport.close()
 
 def main(argv):
     if len(argv) != 2:
         print "Wrong arguments"
-        print "arguments: [option(-t, -c, -o)] [training_file]"
+        print "arguments: [option(-t, -c, -o)] [training_file|model_file]"
         return
     option = argv[0]
-    input_file = argv[1]
+    _file = argv[1]
     if option == "-t":#train
-        train(input_file)
+        train(_file)
     elif option == "-c":#classify
-        test(input_file)
+        test(_file)
     elif option == "-o":#online training. Split training data into two pieces and train one by one
-        train_online(input_file)
+        train_online(_file)
+    elif option == "-s": #save the current model
+        save_model(_file)
+    elif option == "-l": #load the saved model
+        load_model(_file)
 
 
 if __name__=="__main__":

@@ -34,7 +34,9 @@ double kernel(int i, double x_sq, lasvm_sparsevector_t* testvector, void *kparam
 
 void train_online();
 
-int libsvm_save_model();
+int libsvm_save_model(std::string model_file_name);
+
+int libsvm_load_model(std::string model_file_name);
 
 void test();
 

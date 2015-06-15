@@ -103,6 +103,18 @@ class ClassifierHandler : virtual public ClassifierIf {
     //online::libsvm_save_model();
   }
 
+  void save(const std::string& modelfile) {
+    // Your implementation goes here
+    printf("save\n");
+    online::libsvm_save_model(modelfile);
+  }
+
+  void load(const std::string& modelfile) {
+    // Your implementation goes here
+    printf("load\n");
+    online::libsvm_load_model(modelfile);    
+  }
+
 };
 
 int main(int argc, char **argv) {

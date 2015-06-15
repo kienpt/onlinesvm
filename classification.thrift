@@ -13,6 +13,7 @@
  *
  */
 
+
 typedef double Label 
 
 struct VSMElement {
@@ -30,5 +31,9 @@ struct LabelData {
 service Classifier {
 	Label classify(1:VSMVector data),
 
-	void train(1:list<LabelData> trainingdata)	
+	void train(1:list<LabelData> trainingdata),
+
+    void save(1:string modelfile),
+
+    void load(1:string modelfile)
 }

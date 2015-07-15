@@ -134,10 +134,59 @@ def load_model(model_file):
     client.load(model_file)
     transport.close()
 
+def load_then_train_model(training_file, option):
+    model_file = "test_load_and_train.model"
+    if (option == "1"): #Train the first half of training data
+        port = 9092
+        # Make socket
+        transport = TSocket.TSocket('localhost', port)
+        # Buffering is critical. Raw sockets are very slow
+        transport = TTransport.TBufferedTransport(transport)
+        # Wrap in a protocol
+        protocol = TBinaryProtocol.TBinaryProtocol(transport)
+        # Create a client to use the protocol encoder
+        client = Classifier.Client(protocol)
+        # Connect!
+        transport.open()
+   
+        trndata = load_data(training_file)
+        middle = len(trndata)/2
+        
+        trndata1 = trndata[:middle]
+        print "Training first part: "
+        client.train(trndata1)
+   
+        transport.close()
+
+        save_model(model_file) 
+    elif (option == "2"):
+        load_model(model_file)    
+        port = 9092
+        # Make socket
+        transport = TSocket.TSocket('localhost', port)
+        # Buffering is critical. Raw sockets are very slow
+        transport = TTransport.TBufferedTransport(transport)
+        # Wrap in a protocol
+        protocol = TBinaryProtocol.TBinaryProtocol(transport)
+        # Create a client to use the protocol encoder
+        client = Classifier.Client(protocol)
+        # Connect!
+        transport.open()
+   
+        trndata = load_data(training_file)
+        middle = len(trndata)/2
+        
+        trndata2 = trndata[middle:]
+        print "Training second part: "
+        client.train(trndata2)
+   
+        transport.close()
+
 def main(argv):
-    if len(argv) != 2:
+    if len(argv) < 2:
         print "Wrong arguments"
         print "arguments: [option(-t, -c, -o)] [training_file|model_file]"
+        print "or: -tt [training_file|model_file] [action]"
         return
     option = argv[0]
     _file = argv[1]
@@ -151,6 +200,12 @@ def main(argv):
         save_model(_file)
     elif option == "-l": #load the saved model
         load_model(_file)
+    elif option == "-tt": #test load then train model
+        #How to run: 
+        #1: $python Client.py -tt training_file 1 
+        #2: $python Client.py -tt training_file 2 
+        action = argv[2] #action is "1" to train the first part of data. "2" to load model and train the second part
+        load_then_train_model(_file, action)
 
 
 if __name__=="__main__":

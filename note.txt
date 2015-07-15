@@ -1,0 +1,54 @@
+- vector <double> xsv_square;        // norms of support vectors
+and x_square is norms of train vectors -> this is not conssitent with description in the code, which xsv_square is norm of test vectors and x_square is norm of input vector or support vector.
+Debug shows that size of xsv_square is equal to number of support vector
+
+- int m=0;                          // training set size
+m is 0 at the beginning. This variable is size of training set. And it is important when we
+incrementally train new data.
+
+- m starts with 0, and msz starts with size of training data. After load_data, m is msz.
+- in la_test, X are test vectors and XSV are support vectors. However in la_train, X are train vector and there are no XSV
+
+- la_online originates from la_train
+
+- msv in test is number of support vectors
+
+- alpha in train is from training data, however alpha in test is from support vector
+
+- alpha_sv in online is for support vector, it is extracted from alpha
+
+-------------------
+load_data:
+ - X: Stores all training data
+ - Y: Stores all labels of training data
+ - msz is size of current training data data set.
+ - x_square stores squares of all training data
+ - m is number of all training data.
+ - max_index (gamma is normalized by max_index)
+
+
+-------------------
+Experiment on adult.trn & adult.tst
+Size of training data/Accuracy on adult.tst
+1k/79%
+5k/84.x%
+10k/84.y%
+16k/84.z% 
+32k/84.8%
+(x<y<z)
+-> the accuracy does not increase much when number of training data increases.
+It might depend on the type of dataset. 
+
+---------------------
+Classified scores range from -3.x to 2.y
+
+In order to make the scores falling in to 0-1 range, take a look that Weka used, which is
+fitting the results to logistic model to SVM output (-M option).
+---------------------
+
+Number of features. This might be important factor for experiment.
+Not sure how other concept drift method adapts this parameter. In LASVM, this number is
+used to normalize the kernel function (not sure why it is needed but it does affect the result). 
+For now, I get the number of features in the training data and double it to reserve for future training data.
+(Future training data might have more features)
+
